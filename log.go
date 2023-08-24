@@ -1,15 +1,23 @@
 package xlog
 
 import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"reflect"
+	"runtime"
+	"strconv"
+	"strings"
+
 	"github.com/arthurkiller/rollingwriter"
 	"github.com/rs/zerolog"
 )
 
-var log zerolog.Logger
+var logger zerolog.Logger
 
 const (
-	DefaultLogTimeFormat     = "2006-01-02 15:04:05.999"
-	DefaultLogFileTimeFormat = "060102150405"
+	DefaultLogTimeFormat     = "2006-01-02 15:04:05.000"
+	DefaultLogFileTimeFormat = "2006-01-02 15:04:05"
 
 	DebugLevel = "debug"
 	InfoLevel  = "info"
@@ -18,20 +26,64 @@ const (
 
 	VolumeRolling = rollingwriter.VolumeRolling
 	TimeRolling   = rollingwriter.TimeRolling
+
+	OutputToConsole = OutputFileMode(0)
+	OutputToFile    = OutputFileMode(1)
+
+	OutputFormatNormal = OutputFormatMode(0)
+	OutputFormatJson   = OutputFormatMode(1)
 )
 
+var (
+	writer rollingwriter.RollingWriter
+)
+
+type OutputFileMode int
+type OutputFormatMode int
+
 type Config struct {
-	Level         string
-	Format        string
-	Path          string //log path
-	TimeTagFormat string //log file rotate tag
-	File          string //log file name
-	Rolling       int    //rolling policy: VolumeRolling or TimeRolling
+	// log mode
+	FileMode   OutputFileMode
+	FormatMode OutputFormatMode
+
+	// zerolog
+	Level  string
+	Format string
+
+	// rollingwriter
+	FilePath          string //log path
+	FileTimeTagFormat string //log file rotate tag
+	FileName          string //log file name
+	FileRollingPolicy int    //rolling policy: VolumeRolling or TimeRolling
 	// - 时间滚动: 配置策略如同 crontable, 例如,每天0:0切分, 则配置 0 0 0 * * *
 	// - 大小滚动: 配置单个日志文件(未压缩)的滚动大小门限, 入1G, 500M
-	RollingPattern string //rolling pattern
-	Remain         int    //rotate file remain total
-	Gzip           bool   //gzip
+	FileRollingPattern string //rolling pattern
+	FileRemain         int    //rotate file remain total
+	FileUseGzip        bool   //gzip
+
+}
+
+func initRollingWriter(c Config) rollingwriter.RollingWriter {
+	rc := rollingwriter.NewDefaultConfig()
+
+	// maybe lost logs when async mode
+	// rc.WriterMode = "async"
+	rc.LogPath = c.FilePath
+	rc.TimeTagFormat = c.FileTimeTagFormat
+	rc.FileName = c.FileName
+	rc.MaxRemain = c.FileRemain
+	rc.RollingPolicy = c.FileRollingPolicy
+	rc.RollingVolumeSize = c.FileRollingPattern
+	rc.Compress = c.FileUseGzip
+	if rc.TimeTagFormat == "" {
+		rc.TimeTagFormat = DefaultLogFileTimeFormat
+	}
+	var err error
+	writer, err = rollingwriter.NewWriterFromConfig(&rc)
+	if err != nil {
+		panic(err)
+	}
+	return writer
 }
 
 func Init(c Config) {
@@ -48,41 +100,124 @@ func Init(c Config) {
 	}
 
 	zerolog.TimeFieldFormat = c.Format
-	rc := rollingwriter.NewDefaultConfig()
-	rc.LogPath = c.Path
-	rc.TimeTagFormat = c.TimeTagFormat
-	rc.FileName = c.File
-	rc.MaxRemain = c.Remain
-	rc.RollingPolicy = c.Rolling
-	rc.RollingVolumeSize = c.RollingPattern
-	rc.Compress = c.Gzip
-	if rc.TimeTagFormat == "" {
-		rc.TimeTagFormat = DefaultLogFileTimeFormat
+	zerolog.CallerSkipFrameCount = 3
+	zerolog.CallerMarshalFunc = func(pc uintptr, file string, line int) string {
+		short := file
+		for i := len(file) - 1; i > 0; i-- {
+			if file[i] == '/' {
+				short = file[i+1:]
+				break
+			}
+		}
+		file = short
+		return file + ":" + strconv.Itoa(line)
 	}
-	writer, err := rollingwriter.NewWriterFromConfig(&rc)
-	if err != nil {
-		panic(err)
+	if c.FileMode == OutputToFile && c.FormatMode == OutputFormatJson {
+		writer := initRollingWriter(c)
+		logger = zerolog.New(writer).Level(l).With().Timestamp().Caller().Logger()
+		return
 	}
-	output := zerolog.ConsoleWriter{Out: writer, NoColor: true, TimeFormat: c.Format}
-	log = zerolog.New(output).Level(l).With().Timestamp().Logger()
+
+	if c.FileMode == OutputToFile && c.FormatMode == OutputFormatNormal {
+		writer := initRollingWriter(c)
+		output := zerolog.ConsoleWriter{Out: writer, TimeFormat: c.Format, NoColor: true}
+		output.FormatTimestamp = func(i interface{}) string {
+			return fmt.Sprintf("[%s]", i)
+		}
+		output.FormatLevel = func(i interface{}) string {
+			level := i.(string)
+			return strings.ToUpper(fmt.Sprintf("[%s]", string(level[0])))
+		}
+		output.FormatMessage = func(i interface{}) string {
+			caller, file, line, _ := runtime.Caller(9)
+			fileName := filepath.Base(file)
+			funcName := strings.TrimPrefix(filepath.Ext((runtime.FuncForPC(caller).Name())), ".")
+			return fmt.Sprintf("[%s:%d][%s] %s", fileName, line, funcName, i)
+		}
+
+		logger = zerolog.New(output).Level(l).With().Timestamp().Logger()
+		return
+	}
+
+	if c.FileMode == OutputToConsole && c.FormatMode == OutputFormatNormal {
+		output := zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: c.Format}
+		output.FormatTimestamp = func(i interface{}) string {
+			return fmt.Sprintf("[%s]", i)
+		}
+		output.FormatLevel = func(i interface{}) string {
+			level := i.(string)
+			return strings.ToUpper(fmt.Sprintf("[%s]", string(level[0])))
+		}
+		output.FormatMessage = func(i interface{}) string {
+			caller, file, line, _ := runtime.Caller(9)
+			fileName := filepath.Base(file)
+			funcName := strings.TrimPrefix(filepath.Ext((runtime.FuncForPC(caller).Name())), ".")
+			return fmt.Sprintf("[%s:%d][%s] %s", fileName, line, funcName, i)
+		}
+
+		logger = zerolog.New(output).Level(l).With().Timestamp().Logger()
+	}
+
+	if c.FileMode == OutputToConsole && c.FormatMode == OutputFormatJson {
+		logger = zerolog.New(os.Stdout).Level(l).With().Timestamp().Caller().Logger()
+	}
 }
 
 func Infof(format string, v ...interface{}) {
-	log.Info().Msgf(format, v...)
+	logger.Info().Msgf(format, v...)
 }
 
 func Debugf(format string, v ...interface{}) {
-	log.Debug().Msgf(format, v...)
+	logger.Debug().Msgf(format, v...)
 }
 
 func Warnf(format string, v ...interface{}) {
-	log.Warn().Msgf(format, v...)
+	logger.Warn().Msgf(format, v...)
 }
 
 func Errorf(format string, v ...interface{}) {
-	log.Error().Msgf(format, v...)
+	logger.Error().Msgf(format, v...)
 }
 
 func Panicf(format string, v ...interface{}) {
-	log.Panic().Msgf(format, v...)
+	logger.Panic().Msgf(format, v...)
+}
+
+func FormatStruct(keysAndValues ...interface{}) {
+	for i, v := range keysAndValues {
+		if reflect.TypeOf(v).Kind() == reflect.Struct {
+			keysAndValues[i] = fmt.Sprintf("%+v", v)
+		}
+	}
+}
+
+func Info(msg string, keysAndValues ...interface{}) {
+	FormatStruct(keysAndValues...)
+	logger.Info().Fields(keysAndValues).Msg(msg)
+}
+
+func Debug(msg string, keysAndValues ...interface{}) {
+	FormatStruct(keysAndValues...)
+	logger.Debug().Fields(keysAndValues).Msg(msg)
+}
+
+func Warn(msg string, keysAndValues ...interface{}) {
+	FormatStruct(keysAndValues...)
+	logger.Warn().Fields(keysAndValues).Msg(msg)
+}
+
+func Error(msg string, err error, keysAndValues ...interface{}) {
+	FormatStruct(keysAndValues...)
+	logger.Error().Fields(keysAndValues).Msg(msg)
+}
+
+func Panic(msg string, err error, keysAndValues ...interface{}) {
+	FormatStruct(keysAndValues...)
+	logger.Panic().Fields(keysAndValues).Msg(msg)
+}
+
+func Close() {
+	if writer != nil {
+		writer.Close()
+	}
 }
