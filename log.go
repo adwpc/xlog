@@ -43,8 +43,10 @@ type OutputFormatMode int
 
 type Config struct {
 	// log mode
-	FileMode   OutputFileMode
-	FormatMode OutputFormatMode
+	FileMode       OutputFileMode
+	FormatMode     OutputFormatMode
+	CallerCodeLine bool
+	CallerFuncName bool
 
 	// zerolog
 	Level  string
@@ -112,9 +114,29 @@ func Init(c Config) {
 		file = short
 		return file + ":" + strconv.Itoa(line)
 	}
+
+	formatMessageFunc := func(i interface{}) string {
+		caller, file, line, _ := runtime.Caller(9)
+		fileName := filepath.Base(file)
+		funcName := strings.TrimPrefix(filepath.Ext((runtime.FuncForPC(caller).Name())), ".")
+		if c.CallerCodeLine && c.CallerFuncName {
+			return fmt.Sprintf("[%s:%d][%s] %s", fileName, line, funcName, i)
+		}
+		if c.CallerCodeLine && !c.CallerFuncName {
+			return fmt.Sprintf("[%s:%d] %s", fileName, line, i)
+		}
+		if !c.CallerCodeLine && c.CallerFuncName {
+			return fmt.Sprintf("[%s] %s", funcName, i)
+		}
+		return fmt.Sprintf("%s", i)
+	}
+
 	if c.FileMode == OutputToFile && c.FormatMode == OutputFormatJson {
 		writer := initRollingWriter(c)
-		logger = zerolog.New(writer).Level(l).With().Timestamp().Caller().Logger()
+		logger = zerolog.New(writer).Level(l).With().Timestamp().Logger()
+		if c.CallerCodeLine {
+			logger = logger.With().Caller().Logger()
+		}
 		return
 	}
 
@@ -128,12 +150,7 @@ func Init(c Config) {
 			level := i.(string)
 			return strings.ToUpper(fmt.Sprintf("[%s]", string(level[0])))
 		}
-		output.FormatMessage = func(i interface{}) string {
-			caller, file, line, _ := runtime.Caller(9)
-			fileName := filepath.Base(file)
-			funcName := strings.TrimPrefix(filepath.Ext((runtime.FuncForPC(caller).Name())), ".")
-			return fmt.Sprintf("[%s:%d][%s] %s", fileName, line, funcName, i)
-		}
+		output.FormatMessage = formatMessageFunc
 
 		logger = zerolog.New(output).Level(l).With().Timestamp().Logger()
 		return
@@ -148,18 +165,16 @@ func Init(c Config) {
 			level := i.(string)
 			return strings.ToUpper(fmt.Sprintf("[%s]", string(level[0])))
 		}
-		output.FormatMessage = func(i interface{}) string {
-			caller, file, line, _ := runtime.Caller(9)
-			fileName := filepath.Base(file)
-			funcName := strings.TrimPrefix(filepath.Ext((runtime.FuncForPC(caller).Name())), ".")
-			return fmt.Sprintf("[%s:%d][%s] %s", fileName, line, funcName, i)
-		}
+		output.FormatMessage = formatMessageFunc
 
 		logger = zerolog.New(output).Level(l).With().Timestamp().Logger()
 	}
 
 	if c.FileMode == OutputToConsole && c.FormatMode == OutputFormatJson {
-		logger = zerolog.New(os.Stdout).Level(l).With().Timestamp().Caller().Logger()
+		logger = zerolog.New(os.Stdout).Level(l).With().Timestamp().Logger()
+		if c.CallerCodeLine {
+			logger = logger.With().Caller().Logger()
+		}
 	}
 }
 

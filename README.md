@@ -3,11 +3,11 @@
 - [x] High performance base on zerolog
 - [x] Support printing field
 	- [x] log level
-	- [x] caller code line
+	- [x] caller code line (eg:`example.go:32` you can go to this line by alt+click it in IDE)
 	- [x] caller function name
 	- [x] time format
-	- [x] format message(use Infof/Debugf/Xxxxf)
-	- [x] key-value message(use Info/Debug/Xxxx)
+	- [x] format message (use Infof/Debugf/Xxxxf like fmt.Printf())
+	- [x] key-value message (use Info/Debug/Xxxx recommend, without writing %v)
 	- [x] all type support(int/string/float64/map/struct/interface)
 	
 - [x] Support output to console

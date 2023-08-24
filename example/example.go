@@ -39,6 +39,7 @@ func TestOutputToFileJson() {
 	c := xlog.Config{
 		FileMode:           xlog.OutputToFile,
 		FormatMode:         xlog.OutputFormatJson,
+		CallerCodeLine:     true,
 		Level:              xlog.DebugLevel,
 		Format:             xlog.DefaultLogTimeFormat,
 		FilePath:           "./logs",
@@ -59,6 +60,8 @@ func TestOutputToFileNormal() {
 	c := xlog.Config{
 		FileMode:           xlog.OutputToFile,
 		FormatMode:         xlog.OutputFormatNormal,
+		CallerCodeLine:     true,
+		CallerFuncName:     true,
 		Level:              xlog.DebugLevel,
 		Format:             xlog.DefaultLogTimeFormat,
 		FilePath:           "./logs",
@@ -77,10 +80,12 @@ func TestOutputToFileNormal() {
 
 func TestOutputToConsoleNormal() {
 	c := xlog.Config{
-		FileMode:   xlog.OutputToConsole,
-		FormatMode: xlog.OutputFormatNormal,
-		Level:      xlog.DebugLevel,
-		Format:     xlog.DefaultLogTimeFormat,
+		FileMode:       xlog.OutputToConsole,
+		FormatMode:     xlog.OutputFormatNormal,
+		CallerCodeLine: true,
+		CallerFuncName: true,
+		Level:          xlog.DebugLevel,
+		Format:         xlog.DefaultLogTimeFormat,
 	}
 
 	xlog.Init(c)
@@ -90,10 +95,11 @@ func TestOutputToConsoleNormal() {
 
 func TestOutputToConsoleJson() {
 	c := xlog.Config{
-		FileMode:   xlog.OutputToConsole,
-		FormatMode: xlog.OutputFormatJson,
-		Level:      xlog.DebugLevel,
-		Format:     xlog.DefaultLogTimeFormat,
+		FileMode:       xlog.OutputToConsole,
+		FormatMode:     xlog.OutputFormatJson,
+		CallerCodeLine: true,
+		Level:          xlog.DebugLevel,
+		Format:         xlog.DefaultLogTimeFormat,
 	}
 
 	xlog.Init(c)
