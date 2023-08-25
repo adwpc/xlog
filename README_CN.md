@@ -28,7 +28,7 @@
 	{"level":"info","string":"abc","int":123,"float":1.23,"map":{"a":1,"b":2},"struct":"{a:1 b:{b:1} c:map[a:1 b:2]}","time":"2023-08-24 18:12:04.099","caller":"example.go:33","message":"TestOutputToConsoleJson Info"}
 	```
 
-- [x] 支持输出到控制台
+- [x] 支持输出到文件
 	- [x] 支持文件切割滚动
 	
 	```
