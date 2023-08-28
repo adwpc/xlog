@@ -1,4 +1,23 @@
-## Feature [中文](https://github.com/adwpc/xlog/blob/master/README_CN.md)
+[中文](https://github.com/adwpc/xlog/blob/master/README_CN.md)
+## Getting Started
+
+```
+package main
+
+import (
+	xlog "github.com/adwpc/xlog"
+)
+
+func main() {
+	xlog.Init(xlog.TinyCoderConsoleConfig)
+	defer xlog.Close()
+
+	xlog.Infof("Call Infof: %s %d %v", "abc", 123, 1.23)
+	xlog.Info("Call Info", "string", "abc", "int", 123, "float", 1.23)
+}
+```
+
+## Feature 
 - [x] Easy to use
 - [x] High performance base on zerolog
 - [x] Support printing field
