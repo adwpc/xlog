@@ -116,7 +116,7 @@ func Init(c Config) {
 	}
 
 	formatMessageFunc := func(i interface{}) string {
-		caller, file, line, _ := runtime.Caller(9)
+		caller, file, line, _ := runtime.Caller(8)
 		fileName := filepath.Base(file)
 		funcName := strings.TrimPrefix(filepath.Ext((runtime.FuncForPC(caller).Name())), ".")
 		if c.CallerCodeLine && c.CallerFuncName {

@@ -59,6 +59,8 @@ func TestOutputToFileNormal(t *testing.T) {
 		FileRollingPattern: "10M",
 		FileRemain:         3,
 		FileUseGzip:        false,
+		CallerCodeLine:     true,
+		CallerFuncName:     true,
 	}
 
 	Init(c)
