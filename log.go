@@ -203,6 +203,9 @@ func FormatStruct(keysAndValues ...interface{}) {
 		if reflect.TypeOf(v).Kind() == reflect.Struct {
 			keysAndValues[i] = fmt.Sprintf("%+v", v)
 		}
+		if v.(error) != nil {
+			keysAndValues[i] = fmt.Sprintf("%+v", v.(error))
+		}
 	}
 }
 
