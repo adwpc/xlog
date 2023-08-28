@@ -12,7 +12,8 @@
 	- [x] 支持所有类型 (int/string/float64/map/struct/interface)
 	
 - [x] 支持输出到控制台
-
+	- [x] 支持彩色打印
+            ![tiny](https://raw.githubusercontent.com/adwpc/xlog/master/snapshot/tiny_console.png)
 	- [x] 支持输出普通格式
 	
 	```
