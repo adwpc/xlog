@@ -2,6 +2,7 @@ package main
 
 import (
 	"time"
+	"errors"
 
 	xlog "github.com/adwpc/xlog"
 )
@@ -31,6 +32,7 @@ func TestPrinting(tag string) {
 			m := map[string]interface{}{"a": 1, "b": 2}
 			xlog.Infof(tag+" Infof: %s %d %v %v %+v", "abc", 123, 1.23, m, st)
 			xlog.Info(tag+" Info", "string", "abc", "int", 123, "float", 1.23, "map", m, "struct", st)
+			xlog.Error("msg:", errors.New("err"), "aa", errors.New("errr1"))
 		}
 	}
 }

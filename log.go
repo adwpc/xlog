@@ -221,12 +221,12 @@ func Warn(msg string, keysAndValues ...interface{}) {
 	logger.Warn().Fields(keysAndValues).Msg(msg)
 }
 
-func Error(msg string, err error, keysAndValues ...interface{}) {
+func Error(msg string, keysAndValues ...interface{}) {
 	FormatStruct(keysAndValues...)
 	logger.Error().Fields(keysAndValues).Msg(msg)
 }
 
-func Panic(msg string, err error, keysAndValues ...interface{}) {
+func Panic(msg string, keysAndValues ...interface{}) {
 	FormatStruct(keysAndValues...)
 	logger.Panic().Fields(keysAndValues).Msg(msg)
 }
