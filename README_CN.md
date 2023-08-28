@@ -1,4 +1,21 @@
-## 特性 [English](https://github.com/adwpc/xlog/blob/master/README.md).
+## 如何使用
+
+```
+package main
+
+import (
+	xlog "github.com/adwpc/xlog"
+)
+
+func main() {
+	xlog.Init(xlog.TinyCoderConsoleConfig)
+	defer xlog.Close()
+
+	xlog.Infof("Call Infof: %s %d %v", "abc", 123, 1.23)
+	xlog.Info("Call Info", "string", "abc", "int", 123, "float", 1.23)
+}
+```
+## 特性
 
 - [x] 使用简便
 - [x] 基于 zerolog 的高性能
