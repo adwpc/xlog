@@ -11,7 +11,8 @@
 	- [x] all type support(int/string/float64/map/struct/interface)
 	
 - [x] Support output to console
-
+	- [x] pretty logging
+            ![tiny](https://raw.githubusercontent.com/adwpc/xlog/master/snapshot/tiny_console.png)
 	- [x] Support output format normal
 	
 	```
