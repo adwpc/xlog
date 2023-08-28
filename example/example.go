@@ -1,21 +1,22 @@
 package main
 
 import (
-	"time"
 	"errors"
+	"time"
 
 	xlog "github.com/adwpc/xlog"
 )
 
 func main() {
+	TestTinyCoderConsole()
 	TestOutputToFileJson()
 	TestOutputToFileNormal()
 	TestOutputToConsoleNormal()
 	TestOutputToConsoleJson()
 }
 
-func TestPrinting(tag string) {
-	ticker := time.NewTicker(time.Second * 3)
+func TestPrinting(tag string, second int64) {
+	ticker := time.NewTicker(time.Second * time.Duration(second))
 	for {
 		select {
 		case <-ticker.C:
@@ -30,11 +31,23 @@ func TestPrinting(tag string) {
 				c map[string]interface{}
 			}{a: 1, b: B{b: 1}, c: map[string]interface{}{"a": 1, "b": 2}}
 			m := map[string]interface{}{"a": 1, "b": 2}
-			xlog.Infof(tag+" Infof: %s %d %v %v %+v", "abc", 123, 1.23, m, st)
-			xlog.Info(tag+" Info", "string", "abc", "int", 123, "float", 1.23, "map", m, "struct", st)
-			xlog.Error("msg:", errors.New("err"), "aa", errors.New("errr1"))
+			err := errors.New("an error")
+			xlog.Debugf(tag+" Debugf: %s %d %v %v %+v %v", "abc", 123, 1.23, m, st, err)
+			xlog.Debug(tag+" Debug", "string", "abc", "int", 123, "float", 1.23, "map", m, "struct", st, "err", err)
+			xlog.Infof(tag+" Infof: %s %d %v %v %+v %v", "abc", 123, 1.23, m, st, err)
+			xlog.Info(tag+" Info", "string", "abc", "int", 123, "float", 1.23, "map", m, "struct", st, "err", err)
+			xlog.Warnf(tag+" Warnf: %s %d %v %v %+v %v", "abc", 123, 1.23, m, st, err)
+			xlog.Warn(tag+" Warn", "string", "abc", "int", 123, "float", 1.23, "map", m, "struct", st, "err", err)
+			xlog.Errorf(tag+" Errorf: %s %d %v %v %+v %v", "abc", 123, 1.23, m, st, err)
+			xlog.Error(tag+" Error", "string", "abc", "int", 123, "float", 1.23, "map", m, "struct", st, "err", err)
 		}
 	}
+}
+
+func TestTinyCoderConsole() {
+	xlog.Init(xlog.TinyCoderConsoleConfig)
+	defer xlog.Close()
+	TestPrinting("TestTinyCoderConsole", 1)
 }
 
 func TestOutputToFileJson() {
@@ -55,7 +68,7 @@ func TestOutputToFileJson() {
 
 	xlog.Init(c)
 	defer xlog.Close()
-	TestPrinting("TestOutputToFileJson")
+	TestPrinting("TestOutputToFileJson", 5)
 }
 
 func TestOutputToFileNormal() {
@@ -77,7 +90,7 @@ func TestOutputToFileNormal() {
 
 	xlog.Init(c)
 	defer xlog.Close()
-	TestPrinting("TestOutputToFileNormal")
+	TestPrinting("TestOutputToFileNormal", 5)
 }
 
 func TestOutputToConsoleNormal() {
@@ -92,7 +105,7 @@ func TestOutputToConsoleNormal() {
 
 	xlog.Init(c)
 	defer xlog.Close()
-	TestPrinting("TestOutputToConsoleNormal")
+	TestPrinting("TestOutputToConsoleNormal", 1)
 }
 
 func TestOutputToConsoleJson() {
@@ -106,5 +119,5 @@ func TestOutputToConsoleJson() {
 
 	xlog.Init(c)
 	defer xlog.Close()
-	TestPrinting("TestOutputToConsoleJson")
+	TestPrinting("TestOutputToConsoleJson", 1)
 }

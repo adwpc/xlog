@@ -18,6 +18,7 @@ var logger zerolog.Logger
 const (
 	DefaultLogTimeFormat     = "2006-01-02 15:04:05.000"
 	DefaultLogFileTimeFormat = "2006-01-02 15:04:05"
+	DefaultTinyLogTimeFormat = "060102.150405.000"
 
 	DebugLevel = "debug"
 	InfoLevel  = "info"
@@ -63,6 +64,8 @@ type Config struct {
 	FileRemain         int    //rotate file remain total
 	FileUseGzip        bool   //gzip
 
+	//msg key+spliter+value
+	OutputFormatNormalSpliter string
 }
 
 func initRollingWriter(c Config) rollingwriter.RollingWriter {
@@ -86,6 +89,36 @@ func initRollingWriter(c Config) rollingwriter.RollingWriter {
 		panic(err)
 	}
 	return writer
+}
+
+const (
+	colorBlack = iota + 30
+	colorRed
+	colorGreen
+	colorYellow
+	colorBlue
+	colorMagenta
+	colorCyan
+	colorWhite
+
+	colorBold     = 1
+	colorDarkGray = 90
+)
+
+var TinyCoderConsoleConfig = Config{
+	FileMode:       OutputToConsole,
+	FormatMode:     OutputFormatNormal,
+	CallerCodeLine: true,
+	Level:          DebugLevel,
+	Format:         DefaultTinyLogTimeFormat,
+}
+
+// colorize returns the string s wrapped in ANSI code c, unless disabled is true.
+func colorize(s interface{}, c int, disabled bool) string {
+	if disabled {
+		return fmt.Sprintf("%s", s)
+	}
+	return fmt.Sprintf("\x1b[%dm%v\x1b[0m", c, s)
 }
 
 func Init(c Config) {
@@ -140,6 +173,15 @@ func Init(c Config) {
 		return
 	}
 
+	spliter := "=>"
+	if c.OutputFormatNormalSpliter != "" {
+		spliter = c.OutputFormatNormalSpliter
+	}
+
+	formatFieldName := func(i interface{}) string {
+		return fmt.Sprintf("%s%s", i, spliter)
+	}
+
 	if c.FileMode == OutputToFile && c.FormatMode == OutputFormatNormal {
 		writer := initRollingWriter(c)
 		output := zerolog.ConsoleWriter{Out: writer, TimeFormat: c.Format, NoColor: true}
@@ -151,21 +193,66 @@ func Init(c Config) {
 			return strings.ToUpper(fmt.Sprintf("[%s]", string(level[0])))
 		}
 		output.FormatMessage = formatMessageFunc
+		output.FormatFieldName = formatFieldName
 
 		logger = zerolog.New(output).Level(l).With().Timestamp().Logger()
 		return
 	}
 
 	if c.FileMode == OutputToConsole && c.FormatMode == OutputFormatNormal {
+		formatFieldName := func(i interface{}) string {
+			s := colorize(fmt.Sprintf("%s%s", i, spliter), colorCyan, false)
+			return s
+		}
+
+		formatMessageFunc = func(i interface{}) string {
+			caller, file, line, _ := runtime.Caller(8)
+			fileName := filepath.Base(file)
+			funcName := strings.TrimPrefix(filepath.Ext((runtime.FuncForPC(caller).Name())), ".")
+			if c.CallerCodeLine && c.CallerFuncName {
+				n := colorize(fmt.Sprintf("[%s:%d]", fileName, line), colorMagenta, false)
+				l := colorize(fmt.Sprintf("[%s]", funcName), colorYellow, false)
+				return fmt.Sprintf("%s%s %s", n, l, i)
+			}
+			if c.CallerCodeLine && !c.CallerFuncName {
+				n := colorize(fmt.Sprintf("[%s:%d]", fileName, line), colorMagenta, false)
+				return fmt.Sprintf("%s %s", n, i)
+			}
+			if !c.CallerCodeLine && c.CallerFuncName {
+				l := colorize(fmt.Sprintf("[%s]", funcName), colorYellow, false)
+				return fmt.Sprintf("%s %s", l, i)
+			}
+			return fmt.Sprintf("%s", i)
+		}
 		output := zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: c.Format}
 		output.FormatTimestamp = func(i interface{}) string {
-			return fmt.Sprintf("[%s]", i)
+			return colorize(fmt.Sprintf("[%s]", i), colorDarkGray, false)
 		}
 		output.FormatLevel = func(i interface{}) string {
 			level := i.(string)
-			return strings.ToUpper(fmt.Sprintf("[%s]", string(level[0])))
+			var l string
+			switch level {
+			case zerolog.LevelTraceValue:
+				l = colorize("[T]", colorMagenta, false)
+			case zerolog.LevelDebugValue:
+				l = colorize("[D]", colorYellow, false)
+			case zerolog.LevelInfoValue:
+				l = colorize("[I]", colorGreen, false)
+			case zerolog.LevelWarnValue:
+				l = colorize("[W]", colorRed, false)
+			case zerolog.LevelErrorValue:
+				l = colorize(colorize("[E]", colorRed, false), colorBold, false)
+			case zerolog.LevelFatalValue:
+				l = colorize(colorize("[F]", colorRed, false), colorBold, false)
+			case zerolog.LevelPanicValue:
+				l = colorize(colorize("[P]", colorRed, false), colorBold, false)
+			default:
+				l = colorize(level, colorBold, false)
+			}
+			return l
 		}
 		output.FormatMessage = formatMessageFunc
+		output.FormatFieldName = formatFieldName
 
 		logger = zerolog.New(output).Level(l).With().Timestamp().Logger()
 	}
