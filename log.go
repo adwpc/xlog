@@ -287,6 +287,11 @@ func Panicf(format string, v ...interface{}) {
 
 func FormatStruct(keysAndValues ...interface{}) {
 	for i, v := range keysAndValues {
+		if v == nil {
+			// for reflect.TypeOf(nil) panic
+			keysAndValues[i] = fmt.Sprintf("%+v", v)
+			continue
+		}
 		if reflect.TypeOf(v).Kind() == reflect.Struct {
 			keysAndValues[i] = fmt.Sprintf("%+v", v)
 		}
