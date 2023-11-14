@@ -295,6 +295,9 @@ func FormatStruct(keysAndValues ...interface{}) {
 		if reflect.TypeOf(v).Kind() == reflect.Struct {
 			keysAndValues[i] = fmt.Sprintf("%+v", v)
 		}
+		if reflect.TypeOf(v).Kind() == reflect.UnsafePointer {
+			keysAndValues[i] = fmt.Sprintf("%p", v)
+		}
 		switch v.(type) {
 		case error:
 			keysAndValues[i] = fmt.Sprintf("%+v", v.(error))
