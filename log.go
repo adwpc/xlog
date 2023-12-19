@@ -153,15 +153,15 @@ func Init(c Config) {
 		fileName := filepath.Base(file)
 		funcName := strings.TrimPrefix(filepath.Ext((runtime.FuncForPC(caller).Name())), ".")
 		if c.CallerCodeLine && c.CallerFuncName {
-			return fmt.Sprintf("[%s:%d][%s] %s", fileName, line, funcName, i)
+			return fmt.Sprintf("[%s:%d][%s] %v", fileName, line, funcName, i)
 		}
 		if c.CallerCodeLine && !c.CallerFuncName {
-			return fmt.Sprintf("[%s:%d] %s", fileName, line, i)
+			return fmt.Sprintf("[%s:%d] %v", fileName, line, i)
 		}
 		if !c.CallerCodeLine && c.CallerFuncName {
-			return fmt.Sprintf("[%s] %s", funcName, i)
+			return fmt.Sprintf("[%s] %v", funcName, i)
 		}
-		return fmt.Sprintf("%s", i)
+		return fmt.Sprintf("%v", i)
 	}
 
 	if c.FileMode == OutputToFile && c.FormatMode == OutputFormatJson {
@@ -201,7 +201,7 @@ func Init(c Config) {
 
 	if c.FileMode == OutputToConsole && c.FormatMode == OutputFormatNormal {
 		formatFieldName := func(i interface{}) string {
-			s := colorize(fmt.Sprintf("%s%s", i, spliter), colorCyan, false)
+			s := colorize(fmt.Sprintf("%v%v", i, spliter), colorCyan, false)
 			return s
 		}
 
@@ -212,17 +212,17 @@ func Init(c Config) {
 			if c.CallerCodeLine && c.CallerFuncName {
 				n := colorize(fmt.Sprintf("[%s:%d]", fileName, line), colorMagenta, false)
 				l := colorize(fmt.Sprintf("[%s]", funcName), colorYellow, false)
-				return fmt.Sprintf("%s%s %s", n, l, i)
+				return fmt.Sprintf("%v%v %v", n, l, i)
 			}
 			if c.CallerCodeLine && !c.CallerFuncName {
-				n := colorize(fmt.Sprintf("[%s:%d]", fileName, line), colorMagenta, false)
-				return fmt.Sprintf("%s %s", n, i)
+				n := colorize(fmt.Sprintf("[%v:%d]", fileName, line), colorMagenta, false)
+				return fmt.Sprintf("%v %v", n, i)
 			}
 			if !c.CallerCodeLine && c.CallerFuncName {
-				l := colorize(fmt.Sprintf("[%s]", funcName), colorYellow, false)
-				return fmt.Sprintf("%s %s", l, i)
+				l := colorize(fmt.Sprintf("[%v]", funcName), colorYellow, false)
+				return fmt.Sprintf("%v %v", l, i)
 			}
-			return fmt.Sprintf("%s", i)
+			return fmt.Sprintf("%v", i)
 		}
 		output := zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: c.Format}
 		output.FormatTimestamp = func(i interface{}) string {
