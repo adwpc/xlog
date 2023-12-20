@@ -20,6 +20,7 @@ const (
 	DefaultLogFileTimeFormat = "2006-01-02 15:04:05"
 	DefaultTinyLogTimeFormat = "060102.150405.000"
 
+	TraceLevel = "trace"
 	DebugLevel = "debug"
 	InfoLevel  = "info"
 	WarnLevel  = "warn"
@@ -124,6 +125,8 @@ func colorize(s interface{}, c int, disabled bool) string {
 func Init(c Config) {
 	l := zerolog.GlobalLevel()
 	switch c.Level {
+	case TraceLevel:
+		l = zerolog.TraceLevel
 	case DebugLevel:
 		l = zerolog.DebugLevel
 	case InfoLevel:
@@ -265,12 +268,16 @@ func Init(c Config) {
 	}
 }
 
-func Infof(format string, v ...interface{}) {
-	logger.Info().Msgf(format, v...)
+func Tracef(format string, v ...interface{}) {
+	logger.Trace().Msgf(format, v...)
 }
 
 func Debugf(format string, v ...interface{}) {
 	logger.Debug().Msgf(format, v...)
+}
+
+func Infof(format string, v ...interface{}) {
+	logger.Info().Msgf(format, v...)
 }
 
 func Warnf(format string, v ...interface{}) {
@@ -305,14 +312,19 @@ func FormatStruct(keysAndValues ...interface{}) {
 	}
 }
 
-func Info(msg string, keysAndValues ...interface{}) {
+func Trace(msg string, keysAndValues ...interface{}) {
 	FormatStruct(keysAndValues...)
-	logger.Info().Fields(keysAndValues).Msg(msg)
+	logger.Trace().Fields(keysAndValues).Msg(msg)
 }
 
 func Debug(msg string, keysAndValues ...interface{}) {
 	FormatStruct(keysAndValues...)
 	logger.Debug().Fields(keysAndValues).Msg(msg)
+}
+
+func Info(msg string, keysAndValues ...interface{}) {
+	FormatStruct(keysAndValues...)
+	logger.Info().Fields(keysAndValues).Msg(msg)
 }
 
 func Warn(msg string, keysAndValues ...interface{}) {
