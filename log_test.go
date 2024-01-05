@@ -22,7 +22,7 @@ func Printing(tag string) {
 			}{a: 1, b: B{b: 1}, c: map[string]interface{}{"a": 1, "b": 2}}
 			m := map[string]interface{}{"a": 1, "b": 2}
 			Infof(tag+" Infof: %s %d %v %v %+v", "abc", 123, 1.23, m, st)
-			Info(tag+" Info", "string", "abc", "int", 123, "float", 1.23, "map", m, "struct", st)
+			Info(tag+" Info", "string", "abc", "int", 123, "float", 1.23, "map", m, "struct", st, "bool", true)
 		}
 	}
 }

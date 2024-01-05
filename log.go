@@ -308,6 +308,8 @@ func FormatStruct(keysAndValues ...interface{}) {
 		switch v.(type) {
 		case error:
 			keysAndValues[i] = fmt.Sprintf("%+v", v.(error))
+		default:
+			keysAndValues[i] = fmt.Sprintf("%v", v)
 		}
 	}
 }
